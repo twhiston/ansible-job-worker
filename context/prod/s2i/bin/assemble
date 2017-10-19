@@ -1,0 +1,65 @@
+#!/bin/bash
+
+set -e
+
+export_vars=$(cgroup-limits); export $export_vars
+
+fail(){
+	echo  "---! FATAL ERROR !---"
+	echo "$1"
+	exit 1
+}
+
+echo "--- Ansible Job Runner Builder ---"
+
+echo "---> Installing playbook source..."
+cp -Rf /tmp/src/. ./
+
+
+echo "---> Disable host key checking in ansible..."
+touch /opt/app-root/src/.ansible.cfg
+echo "[defaults]
+host_key_checking = False" > /opt/app-root/src/.ansible.cfg
+
+
+# TODO - In theory we could just set up the jobs by adding them via the cli using a template but it would be cooler if they were added here from a spec
+# RUN A USER SCRIPT THAT IS PART OF THE REPO
+# This script will be mounted in to ${HOME}/.ajw/build.sh
+if [ -f ${HOME}/.ajw/scripts/build.sh ]
+then
+ echo "---> Running user supplied build script"
+ source ${HOME}/.ajw/scripts/build.sh
+fi
+
+echo "---> Fix Permissions"
+fix-permissions ./
+
+if [ -f ${HOME}/.ajw/scripts/permissions.sh ]
+then
+ echo "---> Running user supplied permissions script"
+ source ${HOME}/.ajw/scripts/permissions.sh
+fi
+
+# This needs to be done after the permissions are 'fixed' otherwise the ssh agent complains
+# TODO - make this smarter, if file exists etc... (as user might add it)
+echo "---> Turn off GSSAPIAuthentication in /opt/app-root/src/.ssh/config"
+touch /opt/app-root/src/.ssh/config
+echo "
+Host *
+    GSSAPIAuthentication no
+	" | > /opt/app-root/src/.ssh/config
+chmod 600 /opt/app-root/src/.ssh/config
+
+if [ -f ${HOME}/.ajw/scripts/test.sh ]
+then
+ echo "---> Running user supplied test script"
+ source ${HOME}/.ajw/scripts/test.sh
+fi
+
+if [ -f ${HOME}/.ajw/scripts/cleanup.sh ]
+then
+ echo "---> Running user supplied cleanup script"
+ source ${HOME}/.ajw/scripts/cleanup.sh
+fi
+
+echo "--- Build Completed ---"

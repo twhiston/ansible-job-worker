@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# We only want to skip the entrypoint if we are doing an s2i assemble build
+if [[ $@ == *"/usr/libexec/s2i/assemble"* ]]
+then
+    exec "$@"
+    exit $?
+fi
+
+echo "--- Ansible Job Runner ---"
+
+# We need to set up some nss_wrapper trickery to get around the openshift user id scheme
+# Without this ansible calls to get the username etc.... will fail
+echo "centos:x:$(id -u):0:openshift user:/opt/app-root/src:/bin/sh" > /tmp/passwd
+export LD_PRELOAD=/usr/lib64/libnss_wrapper.so
+export NSS_WRAPPER_PASSWD=/tmp/passwd
+export NSS_WRAPPER_GROUP=/etc/group
+
+exec "$@"
+
+echo "--- Job Finished ---"
+exit $?

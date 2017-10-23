@@ -27,25 +27,29 @@ In your project root create a folder  called `.ajw`
 
 The folder may contain the following folders
 
-cronjobs:
+
+* cronjobs:
         contains openshift cronjob templates (currently not used directly but in roadmap of golang cli tool)
         see [Openshift Documentation](https://docs.openshift.org/latest/dev_guide/cron_jobs.html)
 
-jobs:
+
+* jobs:
         contains openshift cronjob templates (currently not used directly but in roadmap of golang cli tool)
         see [Openshift Documentation](https://docs.openshift.org/latest/dev_guide/jobs.html)
 
-scripts:
+
+* scripts:
         contains scripts to be used at container assembly time by the s2i image.
         The only scripts that will be called directly are:
+        
             `build.sh` - run after the source is copied and the basic ansible setup is done
             `permissions.sh` - run after fix-permissions.sh is run over the home folder to allow manual correction if needed
             `test.sh` - put any tests that you want to run after the image has been build here, run after permissions.sh
             `cleanup.sh` - put any cleanup code here, run directly at the end of the assemble script
 
-secrets:
-        openshift templates for secrets. It is STRONGLY advised that this folder is .gitignored and not shared, and is purely
-        kept here out of convenience.
+
+* secrets:
+        openshift templates for secrets. It is STRONGLY advised that this folder is .gitignored and not shared, and is purely kept here out of convenience.
 
 
 Once these files are added you can create the app in openshift (add and configure source secrets if your repo is private)
